@@ -31,7 +31,16 @@
       <h2>Publicaciones pendientes</h2><p class="muted">Revisá el contenido antes de publicarlo en el sitio institucional.</p><div id="pendingEvents" class="admin-list"></div>
     </section>
     <section class="admin-card director-only" id="usersSection" hidden>
-      <h2>Gestión de cuentas</h2><p class="muted">Las cuentas se crean desde el panel de autenticación de Supabase. Aquí podés asignar el rol de directora a una cuenta existente.</p><div id="usersList" class="admin-list"></div>
+      <h2>Gestión de cuentas docentes</h2>
+      <p class="muted">Creá las cuentas de las maestras. La contraseña inicial se entrega de forma privada a cada docente.</p>
+      <form id="teacherForm">
+        <label for="teacherName">Nombre y apellido</label><input id="teacherName" maxlength="120" required placeholder="Ej.: María González">
+        <label for="teacherEmail">Correo electrónico</label><input id="teacherEmail" type="email" maxlength="254" required placeholder="maestra@correo.com">
+        <label for="teacherPassword">Contraseña inicial (mínimo 8 caracteres)</label><input id="teacherPassword" type="password" minlength="8" autocomplete="new-password" required>
+        <button class="button button-primary full" type="submit" id="createTeacherBtn">Crear cuenta docente</button>
+        <p class="form-message" id="teacherMessage" role="status"></p>
+      </form>
+      <h3 style="margin-top:25px">Cuentas registradas</h3><div id="usersList" class="admin-list"></div>
     </section>
     <p class="dashboard-foot"><a href="index.html">← Volver al sitio público</a></p>
   </main>
