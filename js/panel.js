@@ -3,7 +3,7 @@
   const cfg = window.EJI20_CONFIG || {};
   const configured = cfg.SUPABASE_URL && !cfg.SUPABASE_URL.startsWith("PEGAR_") && cfg.SUPABASE_ANON_KEY && !cfg.SUPABASE_ANON_KEY.startsWith("PEGAR_");
   if (!configured || !window.supabase) { document.body.innerHTML = '<main class="container section"><h1>Falta configurar Supabase</h1><p>Configurá URL y clave publicable en js/config.js.</p><a href="index.html">Volver</a></main>'; return; }
-  const db = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
+  const db = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
   let currentUser, profile;
   const esc = s => String(s ?? "").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const dateFmt = d => new Date(d+"T12:00:00").toLocaleDateString("es-AR");
@@ -18,11 +18,11 @@
     profile=data;
     if(!["director","teacher"].includes(profile.role)){msg("roleBanner","Tu cuenta todavía no tiene permisos habilitados. Contactá a la dirección."); $("eventForm").hidden=true;return;}
     $("roleBanner").textContent = profile.role==="director" ? "Sesión de dirección: tenés permisos de administración." : "Sesión docente: tus publicaciones serán revisadas por la dirección.";
-    if(profile.role==="director") { $("pendingSection").hidden=false; $("usersSection").hidden=false; loadPending(); loadUsers(); }
+    if(profile.role==="director") { $("pendingSection").hidden=false; $("usersSection").hidden=false; $("publishedSection").hidden=false; loadPending(); loadUsers(); loadPublished(); }
     loadMine();
   }
   $("logoutBtn").addEventListener("click",async()=>{await db.auth.signOut();location.href="index.html";});
-  $("refreshBtn").addEventListener("click",()=>{loadMine();if(profile?.role==="director"){loadPending();loadUsers();}});
+  $("refreshBtn").addEventListener("click",()=>{loadMine();if(profile?.role==="director"){loadPending();loadUsers();loadPublished();}});
   $("eventForm").addEventListener("submit",async e=>{
     e.preventDefault(); const button=$("publishBtn");button.disabled=true;msg("eventMessage","Subiendo publicación…");
     try {
@@ -35,7 +35,7 @@
         const {error:upErr}=await db.storage.from("event-photos").upload(path,f,{contentType:f.type,upsert:false});if(upErr)throw upErr;
         const {data:pub}=db.storage.from("event-photos").getPublicUrl(path);
         const {error:photoErr}=await db.from("event_photos").insert({event_id:event.id,storage_path:path,public_url:pub.publicUrl,uploaded_by:currentUser.id});if(photoErr)throw photoErr;}
-      msg("eventMessage",status==="published"?"¡Publicación publicada!":"¡Enviada! La directora deberá aprobarla antes de que sea visible.");$("eventForm").reset();loadMine();if(profile.role==="director")loadPending();
+      msg("eventMessage",status==="published"?"¡Publicación publicada!":"¡Enviada! La directora deberá aprobarla antes de que sea visible.");$("eventForm").reset();loadMine();if(profile.role==="director"){loadPending();loadPublished();}
     }catch(err){console.error(err);msg("eventMessage",err.message||"Ocurrió un error al guardar.");}finally{button.disabled=false;}
   });
   $("teacherForm").addEventListener("submit",async e=>{
@@ -63,7 +63,20 @@
     $("pendingEvents").querySelectorAll("[data-approve]").forEach(b=>b.addEventListener("click",()=>moderate(b.dataset.approve,"published")));
     $("pendingEvents").querySelectorAll("[data-reject]").forEach(b=>b.addEventListener("click",()=>moderate(b.dataset.reject,"rejected")));
   }
-  async function moderate(id,status){const {error}=await db.from("events").update({status}).eq("id",id);if(error){alert("No se pudo actualizar la publicación.");return;}loadPending();loadMine();}
+  async function moderate(id,status){const {error}=await db.from("events").update({status}).eq("id",id);if(error){alert("No se pudo actualizar la publicación. Si el estado es ocultar/mostrar, ejecutá el SQL de actualización incluido en el paquete.");return;}loadPending();loadPublished();loadMine();}
+  async function loadPublished(){
+    const {data,error}=await db.from("events").select("id,title,event_date,status,created_at,created_by").in("status",["published","hidden"]).order("created_at",{ascending:false});
+    if(error){$("publishedEvents").textContent="No se pudieron cargar los eventos publicados.";return;}
+    $("publishedEvents").innerHTML=data.length?data.map(e=>`<article class="admin-item"><div><strong>${esc(e.title)}</strong><small>${dateFmt(e.event_date)} · ${e.status==="hidden"?"Oculto":"Visible en el sitio"}</small></div><div class="pending-actions"><button class="button button-outline" data-toggle-event="${e.id}" data-next="${e.status==="hidden"?"published":"hidden"}">${e.status==="hidden"?"Mostrar":"Ocultar"}</button><button class="button button-danger" data-delete-event="${e.id}">Eliminar</button></div></article>`).join(""):'<p class="muted">No hay eventos publicados para administrar.</p>';
+    $("publishedEvents").querySelectorAll("[data-toggle-event]").forEach(b=>b.addEventListener("click",()=>moderate(b.dataset.toggleEvent,b.dataset.next)));
+    $("publishedEvents").querySelectorAll("[data-delete-event]").forEach(b=>b.addEventListener("click",()=>deleteEvent(b.dataset.deleteEvent)));
+  }
+  async function deleteEvent(id){
+    if(!confirm("¿Eliminar definitivamente este evento? Esta acción no se puede deshacer."))return;
+    const {error}=await db.from("events").delete().eq("id",id);
+    if(error){alert("No se pudo eliminar el evento. Revisá los permisos.");return;}
+    loadPublished();loadMine();
+  }
   async function loadUsers(){
     const {data,error}=await db.from("profiles").select("id,full_name,role,created_at").order("created_at",{ascending:true});
     if(error){$("usersList").textContent="No se pudieron cargar los perfiles.";return;}
