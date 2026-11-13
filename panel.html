@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#176b68"><title>Panel docente | EJI N.º 20</title>
+  <link rel="icon" href="assets/escudo-eji20.jfif"><link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="dashboard-body">
+  <header class="dashboard-header"><a class="brand" href="index.html"><img src="assets/escudo-eji20.jfif" alt=""><span><strong>EJI N.º 20</strong><small>Panel institucional</small></span></a><div class="user-tools"><span id="userEmail">Cargando usuario…</span><button class="button button-outline" id="logoutBtn">Cerrar sesión</button></div></header>
+  <main class="dashboard container">
+    <div class="dashboard-welcome"><div><span class="eyebrow eyebrow-green">GESTIÓN INSTITUCIONAL</span><h1>Panel de publicaciones</h1><p>Desde aquí podés compartir novedades y fotografías de la escuela.</p></div><span class="dashboard-flower">✿</span></div>
+    <div class="role-banner" id="roleBanner">Verificando permisos…</div>
+    <div class="dashboard-grid">
+      <section class="admin-card">
+        <h2>Crear una publicación</h2><p class="muted">Las publicaciones de docentes requieren aprobación de la dirección antes de hacerse públicas.</p>
+        <form id="eventForm">
+          <label for="eventTitle">Título</label><input id="eventTitle" maxlength="100" required placeholder="Ej.: Acto por el Día de la Bandera">
+          <label for="eventDate">Fecha del evento</label><input id="eventDate" type="date" required>
+          <label for="eventDescription">Descripción</label><textarea id="eventDescription" rows="5" maxlength="2000" required placeholder="Contanos qué compartieron en esta actividad…"></textarea>
+          <label for="eventImages">Fotografías (hasta 5 imágenes)</label><input id="eventImages" type="file" accept="image/jpeg,image/png,image/webp" multiple>
+          <small class="muted">Formatos JPG, PNG o WEBP. Máximo 5 MB por imagen.</small>
+          <button class="button button-primary full" type="submit" id="publishBtn">Enviar publicación</button><p class="form-message" id="eventMessage" role="status"></p>
+        </form>
+      </section>
+      <section class="admin-card">
+        <div class="card-heading"><div><h2>Mis publicaciones</h2><p class="muted">Estado y administración de tus aportes.</p></div><button class="button button-outline" id="refreshBtn">Actualizar</button></div>
+        <div id="myEvents" class="admin-list"><p class="muted">Cargando publicaciones…</p></div>
+      </section>
+    </div>
+    <section class="admin-card director-only" id="pendingSection" hidden>
+      <h2>Publicaciones pendientes</h2><p class="muted">Revisá el contenido antes de publicarlo en el sitio institucional.</p><div id="pendingEvents" class="admin-list"></div>
+    </section>
+    <section class="admin-card director-only" id="usersSection" hidden>
+      <h2>Gestión de cuentas</h2><p class="muted">Las cuentas se crean desde el panel de autenticación de Supabase. Aquí podés asignar el rol de directora a una cuenta existente.</p><div id="usersList" class="admin-list"></div>
+    </section>
+    <p class="dashboard-foot"><a href="index.html">← Volver al sitio público</a></p>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/config.js"></script><script src="js/panel.js"></script>
+</body>
+</html>
