@@ -11,14 +11,23 @@
   const modal = $("loginModal");
   const openModal = () => { modal.classList.add("show"); modal.setAttribute("aria-hidden", "false"); $("email").focus(); };
   const closeModal = () => { modal.classList.remove("show"); modal.setAttribute("aria-hidden", "true"); };
-  $("loginOpen").addEventListener("click", openModal);
   $("loginClose").addEventListener("click", closeModal);
   modal.addEventListener("click", e => { if (e.target.dataset.close) closeModal(); });
 
   const cfg = window.EJI20_CONFIG || {};
   const configured = cfg.SUPABASE_URL && !cfg.SUPABASE_URL.startsWith("PEGAR_") && cfg.SUPABASE_ANON_KEY && !cfg.SUPABASE_ANON_KEY.startsWith("PEGAR_");
   if (!configured || !window.supabase) return;
-  const client = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
+  const client = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+  // El botón de acceso verifica la sesión en el momento del clic.
+  $("loginOpen").addEventListener("click", async (e) => {
+    e.preventDefault();
+    const { data: { session }, error } = await client.auth.getSession();
+    if (!error && session) {
+      location.href = "panel.html";
+    } else {
+      openModal();
+    }
+  });
 
   $("loginForm").addEventListener("submit", async e => {
     e.preventDefault();
@@ -33,7 +42,7 @@
     const { data, error } = await client.from("events").select("id,title,description,event_date,created_at").eq("status","published").order("event_date",{ascending:false}).limit(6);
     if (error || !data?.length) return;
     $("publicEvents").innerHTML = data.map(ev => `<article class="news-card"><div class="news-card-top"><span>✿ ACTIVIDAD ESCOLAR</span><time>${new Date(ev.event_date+"T12:00:00").toLocaleDateString("es-AR")}</time></div><h3>${escapeHtml(ev.title)}</h3><p>${escapeHtml(ev.description)}</p></article>`).join("");
-    const { data: photos } = await client.from("event_photos").select("id,event_id,public_url,created_at").order("created_at",{ascending:false}).limit(9);
+    const { data: photos } = await client.from("event_photos").select("id,event_id,public_url,created_at,events!inner(status)").eq("events.status","published").order("created_at",{ascending:false}).limit(9);
     if (photos?.length) $("publicGallery").innerHTML = photos.map(p => `<a class="gallery-photo" href="${escapeHtml(p.public_url)}" target="_blank" rel="noopener"><img loading="lazy" src="${escapeHtml(p.public_url)}" alt="Fotografía de una actividad escolar"></a>`).join("");
   }
   loadPublic();
