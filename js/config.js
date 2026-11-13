@@ -2,6 +2,6 @@
 // Pegá aquí la URL del proyecto y la clave anon/publishable.
 // Nunca coloques la service_role key en este archivo.
 window.EJI20_CONFIG = {
-  SUPABASE_URL: "PEGAR_URL_DEL_PROYECTO",
-  SUPABASE_ANON_KEY: "PEGAR_CLAVE_ANON_PUBLICABLE"
+  SUPABASE_URL: "https://pngxhketoobrzbmcrknt.supabase.co",
+  SUPABASE_ANON_KEY: "sb_publishable_xNik8hMu8qr-yQ2Bbew0iw_C6qm90ty"
 };
