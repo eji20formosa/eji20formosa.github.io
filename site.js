@@ -11,7 +11,6 @@
   const modal = $("loginModal");
   const openModal = () => { modal.classList.add("show"); modal.setAttribute("aria-hidden", "false"); $("email").focus(); };
   const closeModal = () => { modal.classList.remove("show"); modal.setAttribute("aria-hidden", "true"); };
-  $("loginOpen").addEventListener("click", openModal);
   $("loginClose").addEventListener("click", closeModal);
   modal.addEventListener("click", e => { if (e.target.dataset.close) closeModal(); });
 
@@ -19,10 +18,15 @@
   const configured = cfg.SUPABASE_URL && !cfg.SUPABASE_URL.startsWith("PEGAR_") && cfg.SUPABASE_ANON_KEY && !cfg.SUPABASE_ANON_KEY.startsWith("PEGAR_");
   if (!configured || !window.supabase) return;
   const client = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
-
-  // Si ya existe una sesión, el botón de acceso lleva directamente al panel.
-  client.auth.getSession().then(({data:{session}})=>{
-    if(session){ const access=$("loginOpen"); access.textContent="Ir al panel"; access.href="panel.html"; access.removeAttribute("data-modal-open"); access.addEventListener("click",e=>{e.preventDefault();location.href="panel.html";}); }
+  // El botón de acceso verifica la sesión en el momento del clic.
+  $("loginOpen").addEventListener("click", async (e) => {
+    e.preventDefault();
+    const { data: { session }, error } = await client.auth.getSession();
+    if (!error && session) {
+      location.href = "panel.html";
+    } else {
+      openModal();
+    }
   });
 
   $("loginForm").addEventListener("submit", async e => {
